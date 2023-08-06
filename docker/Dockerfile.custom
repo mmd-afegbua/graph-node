@@ -1,0 +1,6 @@
+FROM graphprotocol/graph-node:v0.31.0
+
+RUN apt-get update \
+    && apt-get install -y jq curl
+
+CMD ["start"]

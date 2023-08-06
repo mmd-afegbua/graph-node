@@ -33,12 +33,23 @@ scrape_configs:
     static_configs:
       - targets: ['graph-node:8040']
 
-  # - job_name: 'pushgateway'
-  #   scrape_interval: 10s
-  #   honor_labels: true
-  #   static_configs:
-  #     - targets: ['pushgateway:9091']
-
+  - job_name: 'blackbox'
+    metrics_path: 'probe'
+    params:
+      module: [http_2xx]  # Look for a HTTP 200 response.
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets:
+          - http://google.com
+          - http://polygon-zkevm-testnet.rpc.x.superfluid.dev
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "blackbox_exporter:9115"  # Blackbox exporter.
 
 alerting:
   alertmanagers:

@@ -27,6 +27,15 @@ services:
       ipfs: 'ipfs:5001'
       ethereum: 'avalanche:https://avalanche-c.sfrpc.x.superfluid.dev?app=graph'
       GRAPH_LOG: info
+    volumes:
+      - ./docker/health_check/health_check.sh:health_check.sh
+    healthcheck:
+      test: ["CMD", "bash", "/health_check.sh", "http://32082.buck2.x.superfluid.dev/graphql"] # Command to check health.
+      interval: 5s # Interval between health checks.
+      timeout: 5s # Timeout for each health checking.
+      retries: 20 # Hou many times retries.
+      start_period: 10s # Estimated time to boot.
+
   ipfs:
     image: ipfs/go-ipfs:v0.10.0
     ports:
@@ -61,7 +70,7 @@ services:
       - ./prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
+      - "9080:9090"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -102,3 +111,24 @@ services:
     restart: unless-stopped
     expose:
       - 3000
+
+  blackbox_exporter:
+    image: prom/blackbox-exporter:v0.24.0
+    container_name: blackbox_exporter
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./blackboxexporter/config.yml:/etc/blackboxexporter/config.yml
+    command:
+      - '--config.file=/etc/blackboxexporter/config.yml'
+    restart: unless-stopped
+    expose:
+      - 9115
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx_reverse_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
